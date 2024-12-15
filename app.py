@@ -107,39 +107,90 @@ def get_selected_index(selected):
 
 def write_number(n, index, board):
     """Write a number into the selected modifiable cell."""
-    pass
+    r, c = index
+    if r < 0 or c < 0:
+        return
+    value = board[r][c]
+    if isinstance(value, ctk.StringVar):
+        value.set(str(n))
 
 
 def erase_number(index, board):
     """Erase the number of the selected modifiable cell."""
-    pass
+    r, c = index
+    if r < 0 or c < 0:
+        return
+    value = board[r][c]
+    if isinstance(value, ctk.StringVar):
+        value.set("")
 
 
 def is_board_solved(board):
     """Check if the current Sudoku board is solvable."""
-    # if is_board_filled and is_board_valid
-    pass
+    board_copy = get_board_copy(board)
+    return is_board_filled(board_copy) and is_board_valid(board_copy)
 
 
 def is_board_filled(board):
     """Check if the current Sudoku board has no empty cells."""
-    pass
+    board_copy = get_board_copy(board)
+    return all(c != 0 for r in board_copy for c in r)
 
 
 def is_board_valid(board):
     """Check if the current Sudoku board is valid."""
-    pass
+    board_copy = get_board_copy(board)
+
+    def is_valid_group(group):
+        nums = [int(n) for n in group if n != 0]
+        return len(nums) == len(set(nums))
+
+    for row in board_copy:
+        if not is_valid_group(row):
+            return False
+
+    for col in zip(*board_copy):
+        if not is_valid_group(col):
+            return False
+
+    for i in range(0, SIZE, BASE):
+        for j in range(0, SIZE, BASE):
+            subgrid = [
+                board_copy[r][c] for r in range(i, i + BASE) for c in range(j, j + BASE)
+            ]
+            if not is_valid_group(subgrid):
+                return False
+
+    return True
 
 
 def solve_board(board, r=0, c=0):
     """Solve the current Sudoku board using a backtracking algorithm."""
-    # Not necessary
-    pass
+    if r == SIZE - 1 and c == SIZE:
+        return board
+
+    if c == SIZE:
+        r += 1
+        c = 0
+
+    if board[r][c] > 0:
+        return solve_board(board, r, c + 1)
+
+    for num in range(1, SIZE + 1):
+        board[r][c] = num
+        if is_board_valid(board):
+            if solve_board(board, r, c + 1):
+                return board
+        board[r][c] = 0
+
+    return None
 
 
 def show_hint(board, solved_board, index):
     """Provide a hint for the selected cell by filling in the correct value."""
-    pass
+    r, c = index
+    if solved_board and isinstance(board[r][c], ctk.StringVar):
+        board[r][c].set(str(solved_board[r][c]))
 
 
 # --- View ---
@@ -166,9 +217,7 @@ def create_board_widget(master, board, selected):
                 for l in range(BASE):
                     r, c = k + i, l + j  # Calculate global index
                     value = board[r][c]
-                    modifiable = isinstance(
-                        value, ctk.StringVar
-                    )  # Check if cell is modifiable
+                    modifiable = isinstance(value, ctk.StringVar)  # Check if cell is modifiable
 
                     cell_frame = ctk.CTkFrame(
                         subgrid_frame,
@@ -242,7 +291,7 @@ def create_numpad_widget(master, selected, board):
             frame,
             text=str(i),
             font=("", 28),
-            command=None,  # Implement write command
+            command=lambda n=i: write_number(n, get_selected_index(selected), board),
         )
         btn.grid(
             row=(i - 1) // BASE, column=(i - 1) % BASE, sticky="news", padx=5, pady=5
@@ -261,7 +310,7 @@ def create_erase_btn(master, selected, board):
         master,
         text="ERASE",
         font=("", 20),
-        command=None,  # Implement erase command
+        command=lambda: erase_number(get_selected_index(selected), board),
     )
     return btn
 
@@ -272,7 +321,11 @@ def create_check_btn(master, board):
         master,
         text="CHECK",
         font=("", 20),
-        command=None,  # Implement check command
+        command=lambda: show_message(
+            root,
+            "Correct!" if is_board_solved(board) else "Incorrect!",
+            type="success" if is_board_solved(board) else "error",
+        ),
     )
     return btn
 
@@ -283,7 +336,7 @@ def create_hint_btn(master, board, solved_board, selected):
         master,
         text="HINT",
         font=("", 20),
-        command=None,  # Implement hint command
+        command=lambda: show_hint(board, solved_board, get_selected_index(selected)),
     )
     return btn
 
@@ -306,8 +359,18 @@ def create_timer_widget(master):
 
     def update_timer():
         nonlocal start_time, elapsed_time
-        # Implement timer
-        pass
+
+        if start_time is None:
+            start_time = time.time() - elapsed_time
+
+        elapsed_time = time.time() - start_time
+        minutes = int(elapsed_time // 60)
+        seconds = int(elapsed_time % 60)
+        time_str = f"{minutes:02}:{seconds:02}"
+
+        if timer_label.winfo_exists():
+            timer_label.configure(text=time_str)
+            frame.after(1000, update_timer)
 
     update_timer()
 
