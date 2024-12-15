@@ -63,7 +63,7 @@ def generate_board(difficulty=1):
     def shuffle(s):
         return random.sample(s, len(s))
 
-    # Create a complete board
+    # Create a complete board with shuffled rows, columns, and numbers
     rBase = range(BASE)
     rows = [g * BASE + r for g in shuffle(rBase) for r in shuffle(rBase)]
     cols = [g * BASE + c for g in shuffle(rBase) for c in shuffle(rBase)]
@@ -110,21 +110,21 @@ def get_selected_index(selected):
 
 def write_number(n, index, board):
     """Write a number into the selected modifiable cell."""
-    r, c = index
-    if r < 0 or c < 0:
+    r, c = index  # Row and column index
+    if r < 0 or c < 0:  # Invalid if negative
         return
     value = board[r][c]
-    if isinstance(value, ctk.StringVar):
+    if isinstance(value, ctk.StringVar):  # If modifiable
         value.set(str(n))
 
 
 def erase_number(index, board):
     """Erase the number of the selected modifiable cell."""
-    r, c = index
-    if r < 0 or c < 0:
+    r, c = index  # Row and column index
+    if r < 0 or c < 0:  # Invalid if negative
         return
     value = board[r][c]
-    if isinstance(value, ctk.StringVar):
+    if isinstance(value, ctk.StringVar):  # If modifiable
         value.set("")
 
 
@@ -136,27 +136,33 @@ def is_board_solved(board):
 def is_board_filled(board):
     """Check if the current Sudoku board has no empty cells."""
     board_copy = get_board_copy(board)
+    # Check if all cells are non-zero (no empty cells)
     return all(c != 0 for r in board_copy for c in r)
 
 
 def is_board_valid(board):
-    """Check if the current Sudoku board is valid."""
+    """Check if the current Sudoku board is has no duplicates."""
     board_copy = get_board_copy(board)
 
+    # Helper function to check if a group (row, column, or subgrid) contains duplicates
     def is_valid_group(group):
         nums = [int(n) for n in group if n != 0]
         return len(nums) == len(set(nums))
 
+    # Check each row
     for row in board_copy:
         if not is_valid_group(row):
             return False
 
-    for col in zip(*board_copy):
+    # Check each column
+    for col in zip(*board_copy):  # Transpose board
         if not is_valid_group(col):
             return False
 
+    # Check each subgrid
     for i in range(0, SIZE, BASE):
         for j in range(0, SIZE, BASE):
+            # Flatten the subgrid into a list
             subgrid = [
                 board_copy[r][c] for r in range(i, i + BASE) for c in range(j, j + BASE)
             ]
@@ -168,34 +174,50 @@ def is_board_valid(board):
 
 def solve_board(board, r=0, c=0):
     """Solve the current Sudoku board using a backtracking algorithm."""
+
+    # The indices reached the last cell, the board is fully solved
     if r == SIZE - 1 and c == SIZE:
         return board
 
+    # The column index reaches the end, move to the next row
     if c == SIZE:
         r += 1
         c = 0
 
+    # Skip cells that already have a value (move to the next cell)
     if board[r][c] > 0:
         return solve_board(board, r, c + 1)
 
+    # Try every number (1-9) in the current cell
     for num in range(1, SIZE + 1):
         board[r][c] = num
+
+        # Placing the number results in a valid board state, continue solving
         if is_board_valid(board):
-            if solve_board(board, r, c + 1):
+            result = solve_board(board, r, c + 1)
+            if result:
                 return board
+
+        # The number didn't lead to a solution, reset and try the next one (backtrack)
         board[r][c] = 0
 
+    # No solution is found
     return None
 
 
 def show_hint(hints_left, board, solved_board, index):
     """Provide a hint for the selected cell by filling in the correct value."""
+
+    # Check if there are any hints left
     if hints_left.get() <= 0:
         return
 
     r, c = index
     if solved_board and isinstance(board[r][c], ctk.StringVar):
+        # Update the board with the correct value from the solved board
         board[r][c].set(str(solved_board[r][c]))
+
+        # Decrease the remaining hint count
         hints_left.set(hints_left.get() - 1)
 
 
@@ -205,6 +227,7 @@ def show_hint(hints_left, board, solved_board, index):
 def create_board_widget(master, board, selected):
     """Create a widget displaying the Sudoku board."""
 
+    # Event handler when cell is clicked (selected)
     def on_select(r, c):
         select_index(selected, r, c),
         update_highlights(selected, board, cell_labels)
@@ -213,7 +236,7 @@ def create_board_widget(master, board, selected):
         master, fg_color=PALETTE["border"], border_width=2, corner_radius=0
     )
 
-    # 2Dd list to store references to cell labels
+    # 2d list to store references to cell labels
     cell_labels = [[None] * SIZE for _ in range(SIZE)]
 
     # Create 3x3 subgrid frames
@@ -268,26 +291,34 @@ def create_board_widget(master, board, selected):
     return frame
 
 
-def update_highlights(selected, board, cell_labels: list[list[ctk.CTkLabel]]):
+def update_highlights(selected, board, cell_labels):
     """Update the highlighting for the selected cell, row, column, and sub-grid."""
     board_copy = get_board_copy(board)
     r, c = get_selected_index(selected)
+
     for i in range(SIZE):
         for j in range(SIZE):
+            # Highlight the selected cell
             if (i, j) == (r, c):
                 cell_labels[i][j].configure(fg_color=PALETTE["highlight"])
+
+            # Highlight cells with the same number
             elif (
                 board_copy[r][c]
                 and board_copy[i][j]
                 and board_copy[r][c] == board_copy[i][j]
             ):
                 cell_labels[i][j].configure(fg_color=PALETTE["highlight-muted"])
+
+            # Highlight cells in the same row, column, or sub-grid
             elif (
                 r == i
                 or c == j
                 or ((i // BASE == r // BASE) and (j // BASE == c // BASE))
             ):
                 cell_labels[i][j].configure(fg_color=PALETTE["primary-bg"])
+
+            # Reset unhighlighted cells
             else:
                 cell_labels[i][j].configure(fg_color="transparent")
 
@@ -295,6 +326,7 @@ def update_highlights(selected, board, cell_labels: list[list[ctk.CTkLabel]]):
 def create_numpad_widget(master, selected, board, running):
     """Create a widget for entering numbers into the board."""
 
+    # Event handler when a number button is clicked
     def on_write(n, index, board):
         write_number(n, index, board)
         if is_board_solved(board):
@@ -303,6 +335,7 @@ def create_numpad_widget(master, selected, board, running):
 
     frame = ctk.CTkFrame(master, fg_color="transparent")
 
+    # Create buttons from 1-9
     for i in range(1, SIZE + 1):
         btn = ctk.CTkButton(
             frame,
@@ -412,7 +445,6 @@ def create_timer_widget(master, running):
         font=("", 20),
         anchor="center",
     )
-
     timer_label.pack(padx=10, pady=10)
 
     start_time = None
@@ -434,7 +466,7 @@ def create_timer_widget(master, running):
 
         if timer_label.winfo_exists():
             timer_label.configure(text=time_str)
-            frame.after(1000, update_timer)
+            frame.after(1000, update_timer)  # Recursively update every second
 
     update_timer()
 
@@ -455,20 +487,18 @@ def create_home_btn(master):
     return btn
 
 
-def create_new_game_options(master):
+def create_new_game_widget(master):
+    """Create a widget for selecting a difficulty and starting a new game with a button."""
     # Select difficulty
     frame = ctk.CTkFrame(master)
 
     difficulties = ["Quickie", "Easy", "Medium", "Hard", "Expert"]
     selected_difficulty = ctk.IntVar(root, value=1)
 
-    def update_difficulty(choice):
-        selected_difficulty.set(difficulties.index(choice))
-
     difficulty_combobox = ctk.CTkComboBox(
         frame,
         values=difficulties,
-        command=update_difficulty,
+        command=lambda choice: selected_difficulty.set(difficulties.index(choice)),
     )
     difficulty_combobox.set("Easy")
     difficulty_combobox.pack(padx=5, pady=5)
@@ -488,6 +518,7 @@ def create_new_game_options(master):
 
 
 def show_endgame_modal(master):
+    """Show a window when the game ends."""
     modal = ctk.CTkToplevel(master)
     modal.attributes("-topmost", True)
     modal.title("Endgame")
@@ -500,8 +531,8 @@ def show_endgame_modal(master):
     frame = ctk.CTkFrame(modal)
     frame.pack(expand=True, fill="both")
     message = ctk.CTkLabel(frame, text="You won!", font=("", 20, "bold"))
-    message.pack(padx=10, pady=10)
-    new_game_options = create_new_game_options(frame)
+    message.pack(padx=10, pady=50)
+    new_game_options = create_new_game_widget(frame)
     new_game_options.pack(padx=10, pady=10)
 
 
@@ -542,7 +573,7 @@ def homepage():
     title_label = ctk.CTkLabel(frame, text=TITLE, font=("", 36, "bold"))
     title_label.pack(padx=25, pady=25)
 
-    new_game_options = create_new_game_options(frame)
+    new_game_options = create_new_game_widget(frame)
     new_game_options.pack()
 
     # Help button
@@ -581,7 +612,6 @@ def help_page():
         "- Check Solution: Validate your progress.\n"
         "- Hint: Reveal the correct number for a selected cell.\n\n"
     )
-
     instructions_label = ctk.CTkLabel(frame, text=instructions, anchor="w")
     instructions_label.pack(padx=25, pady=25)
 
@@ -590,12 +620,19 @@ def start_game(difficulty):
     """Starts a game."""
     reset_ui(root)
 
-    # Initialize variables
-    board = generate_board(difficulty)
-    solved_board = solve_board(get_board_copy(board))
-    selected = (ctk.IntVar(root, value=-1), ctk.IntVar(root, value=-1))
-    running = ctk.BooleanVar(root, value=True)
-    hints_left = ctk.IntVar(root, value=3)
+    # Initialize the Sudoku board and game state variables
+    board = generate_board(
+        difficulty
+    )  # Initial Sudoku grid based on the chosen difficulty
+    solved_board = solve_board(
+        get_board_copy(board)
+    )  # Fully solved version of the Sudoku grid
+    selected = (
+        ctk.IntVar(root, value=-1),
+        ctk.IntVar(root, value=-1),
+    )  # Coordinates of the currently selected cell (row, column)
+    running = ctk.BooleanVar(root, value=True)  # Indicates if the game is ongoing
+    hints_left = ctk.IntVar(root, value=3)  # Number of hints remaining
 
     # Create widgets
     header_frame = ctk.CTkFrame(root)
