@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import customtkinter as ctk
+from PIL import Image
 import random
 import time
 
@@ -40,10 +41,12 @@ root = ctk.CTk()
 root.title(TITLE)
 
 # Set window size and center it on the screen
-x_position = (root.winfo_screenwidth() - WIDTH) // 2
-y_position = (root.winfo_screenheight() - HEIGHT) // 2
+window_width = root.winfo_screenwidth()
+window_heigth = root.winfo_screenheight()
 
-root.geometry(f"{WIDTH}x{HEIGHT}+{x_position}+{y_position}")
+root.geometry(
+    f"{WIDTH}x{HEIGHT}+{(window_width - WIDTH) // 2}+{(window_heigth - HEIGHT) // 2}"
+)
 
 root.minsize(WIDTH, HEIGHT)
 
@@ -127,8 +130,7 @@ def erase_number(index, board):
 
 def is_board_solved(board):
     """Check if the current Sudoku board is solvable."""
-    board_copy = get_board_copy(board)
-    return is_board_filled(board_copy) and is_board_valid(board_copy)
+    return is_board_filled(board) and is_board_valid(board)
 
 
 def is_board_filled(board):
@@ -186,11 +188,15 @@ def solve_board(board, r=0, c=0):
     return None
 
 
-def show_hint(board, solved_board, index):
+def show_hint(hints_left, board, solved_board, index):
     """Provide a hint for the selected cell by filling in the correct value."""
+    if hints_left.get() <= 0:
+        return
+
     r, c = index
     if solved_board and isinstance(board[r][c], ctk.StringVar):
         board[r][c].set(str(solved_board[r][c]))
+        hints_left.set(hints_left.get() - 1)
 
 
 # --- View ---
@@ -198,6 +204,11 @@ def show_hint(board, solved_board, index):
 
 def create_board_widget(master, board, selected):
     """Create a widget displaying the Sudoku board."""
+
+    def on_select(r, c):
+        select_index(selected, r, c),
+        update_highlights(selected, board, cell_labels)
+
     frame = ctk.CTkFrame(
         master, fg_color=PALETTE["border"], border_width=2, corner_radius=0
     )
@@ -217,7 +228,9 @@ def create_board_widget(master, board, selected):
                 for l in range(BASE):
                     r, c = k + i, l + j  # Calculate global index
                     value = board[r][c]
-                    modifiable = isinstance(value, ctk.StringVar)  # Check if cell is modifiable
+                    modifiable = isinstance(
+                        value, ctk.StringVar
+                    )  # Check if cell is modifiable
 
                     cell_frame = ctk.CTkFrame(
                         subgrid_frame,
@@ -238,10 +251,7 @@ def create_board_widget(master, board, selected):
                     # Add click event listener for selection
                     label.bind(
                         "<Button-1>",
-                        lambda event, r=r, c=c: [
-                            select_index(selected, r, c),
-                            update_highlights(selected, board, cell_labels),
-                        ],
+                        lambda event, r=r, c=c: on_select(r, c),
                     )
 
                     label.pack(expand=True, fill="both", padx=1, pady=1)
@@ -282,8 +292,15 @@ def update_highlights(selected, board, cell_labels: list[list[ctk.CTkLabel]]):
                 cell_labels[i][j].configure(fg_color="transparent")
 
 
-def create_numpad_widget(master, selected, board):
+def create_numpad_widget(master, selected, board, running):
     """Create a widget for entering numbers into the board."""
+
+    def on_write(n, index, board):
+        write_number(n, index, board)
+        if is_board_solved(board):
+            running.set(False)
+            show_endgame_modal(root)
+
     frame = ctk.CTkFrame(master, fg_color="transparent")
 
     for i in range(1, SIZE + 1):
@@ -291,7 +308,7 @@ def create_numpad_widget(master, selected, board):
             frame,
             text=str(i),
             font=("", 28),
-            command=lambda n=i: write_number(n, get_selected_index(selected), board),
+            command=lambda n=i: on_write(n, get_selected_index(selected), board),
         )
         btn.grid(
             row=(i - 1) // BASE, column=(i - 1) % BASE, sticky="news", padx=5, pady=5
@@ -306,42 +323,86 @@ def create_numpad_widget(master, selected, board):
 
 def create_erase_btn(master, selected, board):
     """Create an button to clear the number from a cell."""
+    frame = ctk.CTkFrame(master)
+
+    icon = ctk.CTkImage(Image.open("assets/icons/erase.png"), size=(45, 40))
     btn = ctk.CTkButton(
-        master,
-        text="ERASE",
-        font=("", 20),
+        frame,
+        text="",
+        image=icon,
+        width=CELL_SIZE * 1.5,
+        corner_radius=100,
         command=lambda: erase_number(get_selected_index(selected), board),
     )
-    return btn
+    btn.pack(padx=5, pady=5, ipadx=10, ipady=10)
+
+    label = ctk.CTkLabel(frame, text="Erase", text_color=PALETTE["primary"])
+    label.pack()
+
+    return frame
 
 
 def create_check_btn(master, board):
     """Create a button to check if the board is solved."""
+    frame = ctk.CTkFrame(master)
+
+    icon = ctk.CTkImage(Image.open("assets/icons/check.png"), size=(40, 40))
     btn = ctk.CTkButton(
-        master,
-        text="CHECK",
-        font=("", 20),
+        frame,
+        text="",
+        image=icon,
+        width=CELL_SIZE * 1.5,
+        corner_radius=100,
         command=lambda: show_message(
             root,
             "Correct!" if is_board_solved(board) else "Incorrect!",
             type="success" if is_board_solved(board) else "error",
         ),
     )
-    return btn
+    btn.pack(padx=5, pady=5, ipadx=10, ipady=10)
+
+    label = ctk.CTkLabel(frame, text="Check", text_color=PALETTE["primary"])
+    label.pack()
+
+    return frame
 
 
-def create_hint_btn(master, board, solved_board, selected):
+def create_hint_btn(master, hints_left, board, solved_board, selected):
     """Create a button to show hint."""
+    frame = ctk.CTkFrame(master)
+
+    icon = ctk.CTkImage(Image.open("assets/icons/lightbulb.png"), size=(30, 40))
     btn = ctk.CTkButton(
-        master,
-        text="HINT",
-        font=("", 20),
-        command=lambda: show_hint(board, solved_board, get_selected_index(selected)),
+        frame,
+        text="",
+        image=icon,
+        width=CELL_SIZE * 1.5,
+        corner_radius=100,
+        command=lambda: show_hint(
+            hints_left, board, solved_board, get_selected_index(selected)
+        ),
     )
-    return btn
+    btn.pack(padx=5, pady=5, ipadx=10, ipady=10)
+
+    hints_left_label = ctk.CTkLabel(
+        btn,
+        fg_color=PALETTE["primary"],
+        text_color=PALETTE["bg"],
+        font=("", 14),
+        width=12,
+        height=12,
+        corner_radius=12,
+        textvariable=hints_left,
+    )
+    hints_left_label.place(relx=0.95, rely=0.05, anchor="ne")
+
+    label = ctk.CTkLabel(frame, text="Hint", text_color=PALETTE["primary"])
+    label.pack()
+
+    return frame
 
 
-def create_timer_widget(master):
+def create_timer_widget(master, running):
     """Create a widget for the timer."""
     frame = ctk.CTkFrame(master, fg_color="transparent")
 
@@ -358,6 +419,9 @@ def create_timer_widget(master):
     elapsed_time = 0
 
     def update_timer():
+        if not running.get():
+            return
+
         nonlocal start_time, elapsed_time
 
         if start_time is None:
@@ -389,6 +453,56 @@ def create_home_btn(master):
         command=homepage,
     )
     return btn
+
+
+def create_new_game_options(master):
+    # Select difficulty
+    frame = ctk.CTkFrame(master)
+
+    difficulties = ["Quickie", "Easy", "Medium", "Hard", "Expert"]
+    selected_difficulty = ctk.IntVar(root, value=1)
+
+    def update_difficulty(choice):
+        selected_difficulty.set(difficulties.index(choice))
+
+    difficulty_combobox = ctk.CTkComboBox(
+        frame,
+        values=difficulties,
+        command=update_difficulty,
+    )
+    difficulty_combobox.set("Easy")
+    difficulty_combobox.pack(padx=5, pady=5)
+
+    # New game button
+    new_game_btn = ctk.CTkButton(
+        frame,
+        text="New Game",
+        fg_color=PALETTE["primary"],
+        hover_color=PALETTE["primary-hover"],
+        text_color=PALETTE["bg"],
+        command=lambda: start_game(selected_difficulty.get()),
+    )
+    new_game_btn.pack(padx=5, pady=5)
+
+    return frame
+
+
+def show_endgame_modal(master):
+    modal = ctk.CTkToplevel(master)
+    modal.attributes("-topmost", True)
+    modal.title("Endgame")
+    modal_width, modal_height = WIDTH // 2, HEIGHT // 2
+    modal.geometry(
+        f"{modal_width}x{modal_height}+{(window_width - modal_width) // 2}+{(window_heigth - modal_height) // 2}"
+    )
+    modal.overrideredirect(True)
+
+    frame = ctk.CTkFrame(modal)
+    frame.pack(expand=True, fill="both")
+    message = ctk.CTkLabel(frame, text="You won!", font=("", 20, "bold"))
+    message.pack(padx=10, pady=10)
+    new_game_options = create_new_game_options(frame)
+    new_game_options.pack(padx=10, pady=10)
 
 
 def show_message(master, text, type=None, duration=1000):
@@ -428,31 +542,8 @@ def homepage():
     title_label = ctk.CTkLabel(frame, text=TITLE, font=("", 36, "bold"))
     title_label.pack(padx=25, pady=25)
 
-    # Select difficulty
-    difficulties = ["Quickie", "Easy", "Medium", "Hard", "Expert"]
-    selected_difficulty = ctk.IntVar(root, value=1)
-
-    def update_difficulty(choice):
-        selected_difficulty.set(difficulties.index(choice))
-
-    difficulty_combobox = ctk.CTkComboBox(
-        frame,
-        values=difficulties,
-        command=update_difficulty,
-    )
-    difficulty_combobox.set("Easy")
-    difficulty_combobox.pack(padx=5, pady=5)
-
-    # New game button
-    new_game_btn = ctk.CTkButton(
-        frame,
-        text="New Game",
-        fg_color=PALETTE["primary"],
-        hover_color=PALETTE["primary-hover"],
-        text_color=PALETTE["bg"],
-        command=lambda: start_game(selected_difficulty.get()),
-    )
-    new_game_btn.pack(padx=5, pady=5)
+    new_game_options = create_new_game_options(frame)
+    new_game_options.pack()
 
     # Help button
     help_btn = ctk.CTkButton(
@@ -480,7 +571,15 @@ def help_page():
 
     # Instructions
     instructions = (
-        "Sudoku is a logic-based number puzzle game.\n" "Further instructions here...\n"
+        "Sudoku is a logic-based number puzzle game.\n\n"
+        "Objective:\nFill the 9x9 grid so that each row, column, and 3x3 subgrid\ncontains the digits 1 to 9 without repetition.\n\n"
+        "How to Play:\n"
+        "- Click on an empty cell and enter a number (1-9).\n"
+        "- Use the erase button to clear a cell.\n\n"
+        "Features:\n"
+        "- Difficulty: Start a fresh puzzle with your preferred level.\n"
+        "- Check Solution: Validate your progress.\n"
+        "- Hint: Reveal the correct number for a selected cell.\n\n"
     )
 
     instructions_label = ctk.CTkLabel(frame, text=instructions, anchor="w")
@@ -495,21 +594,24 @@ def start_game(difficulty):
     board = generate_board(difficulty)
     solved_board = solve_board(get_board_copy(board))
     selected = (ctk.IntVar(root, value=-1), ctk.IntVar(root, value=-1))
+    running = ctk.BooleanVar(root, value=True)
+    hints_left = ctk.IntVar(root, value=3)
 
     # Create widgets
     header_frame = ctk.CTkFrame(root)
     home_btn = create_home_btn(header_frame)
     title_label = ctk.CTkLabel(header_frame, text=TITLE, font=("", 24, "bold"))
-    timer_widget = create_timer_widget(header_frame)
+    timer_widget = create_timer_widget(header_frame, running)
 
     board_frame = ctk.CTkFrame(root)
     board_widget = create_board_widget(board_frame, board, selected)
 
     controls_frame = ctk.CTkFrame(root)
-    erase_btn = create_erase_btn(controls_frame, selected, board)
-    check_btn = create_check_btn(controls_frame, board)
-    hint_btn = create_hint_btn(controls_frame, board, solved_board, selected)
-    numpad_widget = create_numpad_widget(controls_frame, selected, board)
+    actions_frame = ctk.CTkFrame(controls_frame)
+    erase_btn = create_erase_btn(actions_frame, selected, board)
+    check_btn = create_check_btn(actions_frame, board)
+    hint_btn = create_hint_btn(actions_frame, hints_left, board, solved_board, selected)
+    numpad_widget = create_numpad_widget(controls_frame, selected, board, running)
 
     # Place widgets
     # Header
@@ -524,10 +626,11 @@ def start_game(difficulty):
     board_widget.pack(anchor="e")
 
     # Controls
-    erase_btn.grid(row=0, column=0, padx=5, pady=5)
-    check_btn.grid(row=0, column=1, padx=5, pady=5)
-    hint_btn.grid(row=0, column=3, padx=5, pady=5)
-    numpad_widget.grid(row=1, column=0, columnspan=4, padx=10, pady=10)
+    actions_frame.grid(row=0, column=0)
+    erase_btn.pack(side="left", padx=5, pady=5)
+    check_btn.pack(side="left", padx=5, pady=5)
+    hint_btn.pack(side="left", padx=5, pady=5)
+    numpad_widget.grid(row=1, column=0, padx=10, pady=10)
 
     # All
     header_frame.pack(padx=10, pady=10, fill="x")

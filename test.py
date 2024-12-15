@@ -108,5 +108,5 @@ def test_solve_board(unsolved_board):
 def test_show_hint(unsolved_board):
     r, c = 0, 2
     solved_board = app.solve_board(app.get_board_copy(unsolved_board))
-    app.show_hint(unsolved_board, solved_board, (r, c))
+    app.show_hint(ctk.IntVar(value=3), unsolved_board, solved_board, (r, c))
     assert int(unsolved_board[r][c].get()) == solved_board[r][c]
