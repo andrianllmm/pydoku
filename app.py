@@ -73,7 +73,7 @@ def generate_board(difficulty=1):
 
     # Remove some cells based on difficulty
     squares = SIZE**2
-    difficulty_map = {0: 0.2, 1: 0.3, 2: 0.45, 3: 0.6, 4: 0.75}
+    difficulty_map = {0: 0.2, 1: 0.3, 2: 0.45, 3: 0.6, 4: 0.7}
     empties = int(squares * difficulty_map.get(difficulty, 0.2))
 
     for p in random.sample(range(squares), empties):
@@ -213,6 +213,9 @@ def show_hint(hints_left, board, solved_board, index):
         return
 
     r, c = index
+    if r < 0 and c < 0:
+        return
+
     if solved_board and isinstance(board[r][c], ctk.StringVar):
         # Update the board with the correct value from the solved board
         board[r][c].set(str(solved_board[r][c]))
