@@ -58,26 +58,38 @@ def generate_board(difficulty=1):
     """Generate a Sudoku board with numbers pre-filled and empty cells."""
 
     def pattern(r, c):
-        return (BASE * (r % BASE) + r // BASE + c) % SIZE
+        # Compute row position within the subgrid
+        row_within_subgrid = r % BASE
+        # Compute the subgrid index
+        row_block_index = r // BASE
+        # Adjust the row position within the full 9x9 grid
+        adjusted_row_position = BASE * row_within_subgrid + row_block_index
+        # Add the column index
+        adjusted_position_in_grid = adjusted_row_position + c
+        # Ensure the index stays within 0-8
+        return adjusted_position_in_grid % SIZE
 
     def shuffle(s):
         return random.sample(s, len(s))
 
     # Create a complete board with shuffled rows, columns, and numbers
     rBase = range(BASE)
-    rows = [g * BASE + r for g in shuffle(rBase) for r in shuffle(rBase)]
-    cols = [g * BASE + c for g in shuffle(rBase) for c in shuffle(rBase)]
-    nums = shuffle(range(1, SIZE + 1))
+    rows = [group * BASE + r for group in shuffle(rBase) for r in shuffle(rBase)] # -> Carefully shuffled row indices [0 to 8]
+    cols = [group * BASE + c for group in shuffle(rBase) for c in shuffle(rBase)] # -> Carefully shuffled column indices [0 to 8]
+
+    nums = shuffle(range(1, SIZE + 1))  # -> Randomly shuffled numbers [0 to 8]
 
     board = [[nums[pattern(r, c)] for c in cols] for r in rows]
 
     # Remove some cells based on difficulty
-    squares = SIZE**2
+
     difficulty_map = {0: 0.2, 1: 0.3, 2: 0.45, 3: 0.6, 4: 0.7}
+
+    squares = SIZE**2
     empties = int(squares * difficulty_map.get(difficulty, 0.2))
 
     for p in random.sample(range(squares), empties):
-        board[p // SIZE][p % SIZE] = ctk.StringVar(root)
+        board[p // SIZE][p % SIZE] = ctk.StringVar(root)  # Set empty cells to a StringVar for mutability
 
     return board
 
