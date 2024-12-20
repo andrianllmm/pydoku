@@ -1,7 +1,7 @@
 import pytest
 import customtkinter as ctk
 
-import app
+import sudoku.model as model
 
 
 @pytest.fixture
@@ -50,63 +50,63 @@ def invalid_board():
 
 
 def test_generate_board():
-    board = app.generate_board()
-    assert len(board) == app.SIZE
-    assert all(len(row) == app.SIZE for row in board)
+    board = model.generate_board()
+    assert len(board) == model.SIZE
+    assert all(len(row) == model.SIZE for row in board)
     assert all(
-        0 <= cell <= app.SIZE for row in app.get_board_copy(board) for cell in row
+        0 <= cell <= model.SIZE for row in model.get_board_copy(board) for cell in row
     )
-
-
-def test_is_solved(solved_board, unsolved_board):
-    assert app.is_board_solved(solved_board)
-    assert not app.is_board_solved(unsolved_board)
 
 
 def test_write_number(unsolved_board):
     prev_value = unsolved_board[0][0]
-    app.write_number(1, (0, 0), unsolved_board)
+    model.write_number(1, (0, 0), unsolved_board)
     assert unsolved_board[0][0] == prev_value
 
     value = 1
     r, c = 0, 2
     assert unsolved_board[0][2].get() == ""
-    app.write_number(value, (r, c), unsolved_board)
+    model.write_number(value, (r, c), unsolved_board)
     assert int(unsolved_board[r][c].get()) == value
 
 
 def test_erase_number(unsolved_board):
     prev_value = unsolved_board[0][0]
-    app.erase_number((0, 0), unsolved_board)
+    model.erase_number((0, 0), unsolved_board)
     assert unsolved_board[0][0] == prev_value
 
     value = 1
     r, c = 0, 2
-    app.write_number(value, (r, c), unsolved_board)
+    model.write_number(value, (r, c), unsolved_board)
     assert int(unsolved_board[r][c].get()) == value
-    app.erase_number((r, c), unsolved_board)
+    model.erase_number((r, c), unsolved_board)
     assert unsolved_board[r][c].get() == ""
 
 
-def test_is_board_field(solved_board, unsolved_board):
-    assert app.is_board_filled(solved_board)
-    assert not app.is_board_filled(unsolved_board)
+def test_is_solved(solved_board, unsolved_board):
+    assert model.is_board_solved(solved_board)
+    assert not model.is_board_solved(unsolved_board)
+
+
+def test_is_board_filled(solved_board, unsolved_board):
+    assert model.is_board_filled(solved_board)
+    assert not model.is_board_filled(unsolved_board)
 
 
 def test_is_board_valid(solved_board, unsolved_board, invalid_board):
-    assert app.is_board_valid(solved_board)
-    assert app.is_board_valid(unsolved_board)
-    assert not app.is_board_valid(invalid_board)
+    assert model.is_board_valid(solved_board)
+    assert model.is_board_valid(unsolved_board)
+    assert not model.is_board_valid(invalid_board)
 
 
 def test_solve_board(unsolved_board):
-    board = app.get_board_copy(unsolved_board)
-    assert app.solve_board(board)
-    assert app.is_board_solved(board)
+    board = model.get_board_copy(unsolved_board)
+    assert model.solve_board(board)
+    assert model.is_board_solved(board)
 
 
 def test_show_hint(unsolved_board):
     r, c = 0, 2
-    solved_board = app.solve_board(app.get_board_copy(unsolved_board))
-    app.show_hint(ctk.IntVar(value=3), unsolved_board, solved_board, (r, c))
+    solved_board = model.solve_board(model.get_board_copy(unsolved_board))
+    model.show_hint(ctk.IntVar(value=3), unsolved_board, solved_board, (r, c))
     assert int(unsolved_board[r][c].get()) == solved_board[r][c]
