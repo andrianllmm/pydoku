@@ -1,75 +1,61 @@
 # CMSC11 Final Project: Sudoku
 
-This project is a Python-based Sudoku game built using the **Tkinter** library.
+A Python-based Sudoku game using **Tkinter**, featuring puzzle generation, solver, and validation.
 
-## Getting Started
+<p align="center">
+   <img src="demo/screenshot.png" alt="Screenshot" width="500">
+</p>
 
-These instructions will help you set up the project on your local machine for development or testing purposes.
+## Features
 
-### Prerequisites
+- **User Interface**
+   - **Board**: Display 9x9 grids with clear sub-grid separation.
+   - **Highlights**: Highlight the selected cell, its row, column, and sub-grid.
+   - **Timer**: Display a timer while solving.
 
-- **Python 3.x**
-- **CustomTkinter** (for the GUI)
-- **pytest** (for running tests)
-- **black** (for code formatting)
+- **User Input**
+   - **Cell Selection**: Click on a cell to select it.
+   - **Number Input**: Enter numbers using on-screen buttons or the keyboard.
+   - **Erase Input**: Use an erase button to clear a cell.
+
+- **Validation**
+   - **Manual Check**: A “check” button validates the entire board.
+   - **Game Completion**: The game ends automatically when the puzzle is solved correctly.
+
+- **Levels**
+   - **Difficulty Selection**: Choose from: Quickie, Easy, Medium, Hard, Expert.
+
+- **Solver**
+   - **Hints**: Reveal a correct number in a selected cell.
+
+- **Help**
+   - **How to Play**: Instructions for selecting cells, inputting numbers, using tools, etc.
 
 ## Installation
 
-### Step 1: Clone the Repository
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/andrianllmm/CMSC11-Final-Project.git
+   cd CMSC11-Final-Project
+   ```
 
-First, clone this repository to your local machine:
+2. Create and activate virtual environment:
+   ```bash
+   python -m venv venv
 
-```bash
-git clone https://github.com/andrianllmm/CMSC11-Final-Project.git
-cd CMSC11-Final-Project
-```
+   # Linux/macOS:
+   source venv/bin/activate
+   # Windows:
+   .\venv\Scripts\activate
+   ```
 
-### Step 2: Create a Virtual Environment
-You can use a virtual environment to manage dependencies by running:
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-```bash
-# For Linux/macOS:
-python3 -m venv venv
-source venv/bin/activate
-
-# For Windows:
-python -m venv venv
-.\venv\Scripts\activate
-```
-
-### Step 3: Install Dependencies
-You can install the required dependencies by running:
-
-```bash
-pip install -r requirements.txt
-```
-
-## Running the App
-Once you've cloned the repository and installed the dependencies, you can run the app by running:
-
-```bash
-python app.py
-```
-
-## Directory Structure
-
-```
-CMSC11-Final-Project/
-│
-├── app.py             # Main file
-├── test.py            # Test cases
-├── requirements.txt   # List of dependencies
-└── assets/            # Any image files or resources for the app (e.g., icons, fonts)
-```
-
-
-## Testing
-To run tests for this project, we use `pytest`. You can run the tests by running:
-
-```bash
-pytest test.py
-```
-
----
-
-Happy coding! 🎮
+4. Run the app:
+   ```bash
+   cd sudoku
+   python app.py
+   ```
