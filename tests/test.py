@@ -1,7 +1,7 @@
 import pytest
 import customtkinter as ctk
 
-import sudoku.model as model
+import src.model as model
 
 
 @pytest.fixture
