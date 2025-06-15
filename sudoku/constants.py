@@ -1,8 +1,14 @@
+import os
 import customtkinter as ctk
 
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # --- Styles ---
-ctk.set_default_color_theme("../assets/custom_theme.json")
+THEME_PATH = os.path.abspath(
+    os.path.join(BASE_DIR, "..", "assets", "custom_theme.json")
+)
+ctk.set_default_color_theme(THEME_PATH)
 ctk.set_appearance_mode("light")
 
 BASE = 3  # Base size of the Sudoku grid (3x3 sub-grids)

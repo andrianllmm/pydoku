@@ -1,8 +1,12 @@
+import os
 import time
 from PIL import Image
 
 from constants import *
 import model
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def create_board_widget(master, board, selected):
@@ -137,7 +141,10 @@ def create_erase_btn(master, selected, board):
     """Create an button to clear the number from a cell."""
     frame = ctk.CTkFrame(master)
 
-    icon = ctk.CTkImage(Image.open("../assets/icons/erase.png"), size=(45, 40))
+    icon = ctk.CTkImage(
+        Image.open(os.path.join(BASE_DIR, "..", "assets", "icons", "erase.png")),
+        size=(45, 40),
+    )
     btn = ctk.CTkButton(
         frame,
         text="",
@@ -158,7 +165,10 @@ def create_check_btn(master, board):
     """Create a button to check if the board is solved."""
     frame = ctk.CTkFrame(master)
 
-    icon = ctk.CTkImage(Image.open("../assets/icons/check.png"), size=(40, 40))
+    icon = ctk.CTkImage(
+        Image.open(os.path.join(BASE_DIR, "..", "assets", "icons", "check.png")),
+        size=(40, 40),
+    )
     btn = ctk.CTkButton(
         frame,
         text="",
@@ -183,7 +193,10 @@ def create_hint_btn(master, hints_left, board, solved_board, selected):
     """Create a button to show hint."""
     frame = ctk.CTkFrame(master)
 
-    icon = ctk.CTkImage(Image.open("../assets/icons/lightbulb.png"), size=(30, 40))
+    icon = ctk.CTkImage(
+        Image.open(os.path.join(BASE_DIR, "..", "assets", "icons", "lightbulb.png")),
+        size=(30, 40),
+    )
     btn = ctk.CTkButton(
         frame,
         text="",
