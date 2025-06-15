@@ -1,10 +1,11 @@
-# CMSC11 Final Project: Sudoku
+# Pydoku
 
-A Python-based Sudoku game using **Tkinter**, featuring puzzle generation, solver, and validation.
+A Python-based Sudoku game using **Tkinter** with puzzle generation, solver, and validation.
 
 <p align="center">
    <img src="demo/screenshot.png" alt="Screenshot" width="500">
 </p>
+
 
 ## Features
 
@@ -31,12 +32,13 @@ A Python-based Sudoku game using **Tkinter**, featuring puzzle generation, solve
 - **Help**
    - **How to Play**: Instructions for selecting cells, inputting numbers, using tools, etc.
 
+
 ## Installation
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/andrianllmm/CMSC11-Final-Project.git
-   cd CMSC11-Final-Project
+   git clone https://github.com/andrianllmm/pydoku.git
+   cd pydoku
    ```
 
 2. Create and activate virtual environment:
@@ -56,6 +58,5 @@ A Python-based Sudoku game using **Tkinter**, featuring puzzle generation, solve
 
 4. Run the app:
    ```bash
-   cd sudoku
-   python app.py
+   cd src/app.py
    ```
