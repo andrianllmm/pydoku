@@ -16,7 +16,7 @@ SIZE = BASE**2  # Total size of the grid (9x9)
 CELL_SIZE = 50  # Size of each cell in pixels
 WIDTH = CELL_SIZE * 20  # Window width
 HEIGHT = WIDTH // 16 * 9  # Window height (16:9 aspect ratio)
-TITLE = "Sudoku"  # App title
+TITLE = "Pydoku"  # App title
 
 # Color Palette
 PALETTE = {
